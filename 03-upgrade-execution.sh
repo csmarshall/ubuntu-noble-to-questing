@@ -73,7 +73,18 @@ if ! grep -q "^Prompt=normal$" /etc/update-manager/release-upgrades 2>/dev/null;
 fi
 
 # Query what upgrade is available
+# Try standard releases first, then development releases if needed
+USE_DEV_RELEASE=false
 AVAILABLE_UPGRADE=$(do-release-upgrade --check-dist-upgrade-only 2>&1 | grep "New release" | grep -oP "'\K[0-9.]+(?=')" || echo "")
+
+if [[ -z "${AVAILABLE_UPGRADE}" ]]; then
+    log_info "No standard release found, checking development releases..."
+    AVAILABLE_UPGRADE=$(do-release-upgrade -d --check-dist-upgrade-only 2>&1 | grep "New release" | grep -oP "'\K[0-9.]+(?=')" || echo "")
+    if [[ -n "${AVAILABLE_UPGRADE}" ]]; then
+        USE_DEV_RELEASE=true
+        log_info "Found development release: ${AVAILABLE_UPGRADE}"
+    fi
+fi
 
 if [[ -z "${AVAILABLE_UPGRADE}" ]]; then
     log_error "No upgrade available from ${CURRENT_VERSION}"
@@ -425,12 +436,28 @@ log_info "✓ Background patcher started (PID: ${PATCHER_PID})"
 trap "kill ${PATCHER_PID} 2>/dev/null || true" EXIT
 
 # Run the upgrade
-# Note: Do NOT use -d flag (that targets development releases)
-# With Prompt=normal, this will upgrade to next available interim release
-# Using --proposed to get newer release upgrader
-# Running in INTERACTIVE mode because non-interactive mode blocks ZFS systems
-# even though HWE kernel 6.14+ doesn't have the freeze bug
-if do-release-upgrade --proposed; then
+# Build upgrade command based on detection results:
+# - Use --proposed for 24.04 upgrades (bypasses ZFS check for HWE 6.14+ kernels)
+# - Use -d if target was found in development releases
+# - Running in INTERACTIVE mode (non-interactive blocks ZFS systems)
+UPGRADE_FLAGS=""
+
+# Add --proposed for 24.04 upgrades to bypass ZFS check
+if [[ "${CURRENT_VERSION}" == "24.04" ]]; then
+    UPGRADE_FLAGS+="--proposed "
+    log_info "Using --proposed flag (bypasses ZFS check for HWE 6.14+ kernels)"
+fi
+
+# Add -d if this is a development release
+if [[ "${USE_DEV_RELEASE}" == "true" ]]; then
+    UPGRADE_FLAGS+="-d "
+    log_info "Using -d flag (development release)"
+fi
+
+UPGRADE_CMD="do-release-upgrade ${UPGRADE_FLAGS}"
+log_info "Running: ${UPGRADE_CMD}"
+
+if ${UPGRADE_CMD}; then
     log_info "✓ Distribution upgrade to ${TARGET_VERSION} completed successfully"
     log_info "${NEXT_STEP_MSG}"
 else
