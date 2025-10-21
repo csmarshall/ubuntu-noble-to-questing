@@ -66,6 +66,12 @@ CURRENT_CODENAME=$(lsb_release -cs)
 
 log_info "Detecting available Ubuntu releases..."
 
+# Ensure release-upgrades allows interim releases
+if ! grep -q "^Prompt=normal$" /etc/update-manager/release-upgrades 2>/dev/null; then
+    log_info "Configuring release-upgrades to allow interim releases..."
+    sed -i 's/^Prompt=.*/Prompt=normal/' /etc/update-manager/release-upgrades
+fi
+
 # Query what upgrade is available
 AVAILABLE_UPGRADE=$(do-release-upgrade --check-dist-upgrade-only 2>&1 | grep "New release" | grep -oP "'\K[0-9.]+(?=')" || echo "")
 
