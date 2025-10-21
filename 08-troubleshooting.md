@@ -116,6 +116,39 @@ sudo apt-mark unhold $(apt-mark showhold)
 
 ## Upgrade Execution Issues
 
+### Issue: Script Shows "No upgrade available"
+
+**Symptoms**:
+- Script exits with "No upgrade available from X.XX"
+- `do-release-upgrade --check-dist-upgrade-only` shows no new release
+
+**Cause**:
+- You may already be on the latest available release
+- Network connectivity issues preventing upgrade detection
+- Repository configuration problems
+
+**Solutions**:
+
+1. **Check current version**:
+   ```bash
+   lsb_release -a
+   # If you're already on 25.10, you're done!
+   ```
+
+2. **Verify network and repos**:
+   ```bash
+   sudo apt update
+   do-release-upgrade --check-dist-upgrade-only
+   ```
+
+3. **Check if on intermediate version**:
+   ```bash
+   # If on 25.04, the script should detect 25.10 as next step
+   # Just re-run: sudo ./03-upgrade-execution.sh
+   ```
+
+---
+
 ### Issue: "There is no development version of an LTS available"
 
 **Symptoms**:
@@ -124,7 +157,7 @@ sudo apt-mark unhold $(apt-mark showhold)
 - Happens after choosing [Y] for `/etc/update-manager/release-upgrades` conflict
 
 **Cause**:
-When you choose [Y] to install the package maintainer's version of `/etc/update-manager/release-upgrades`, it resets `Prompt=lts`. This prevents upgrading from 24.04 LTS to 25.10 (non-LTS interim release).
+When you choose [Y] to install the package maintainer's version of `/etc/update-manager/release-upgrades`, it resets `Prompt=lts`. This prevents upgrading from 24.04 LTS to 25.04/25.10 (non-LTS interim releases).
 
 **Solutions**:
 

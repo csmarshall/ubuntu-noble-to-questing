@@ -60,10 +60,57 @@ mkdir -p "${LOG_DIR}"
 UPGRADE_LOG="${LOG_DIR}/03-upgrade-${UPGRADE_TIMESTAMP}.log"
 exec > >(tee -a "${UPGRADE_LOG}") 2>&1
 
+# Detect current version
+CURRENT_VERSION=$(lsb_release -rs)
+CURRENT_CODENAME=$(lsb_release -cs)
+
+log_info "Detecting available Ubuntu releases..."
+
+# Query what upgrade is available
+AVAILABLE_UPGRADE=$(do-release-upgrade --check-dist-upgrade-only 2>&1 | grep "New release" | grep -oP "'\K[0-9.]+(?=')" || echo "")
+
+if [[ -z "${AVAILABLE_UPGRADE}" ]]; then
+    log_error "No upgrade available from ${CURRENT_VERSION}"
+    log_error "You may already be on the latest release or upgrade path is unavailable"
+    exit 1
+fi
+
+TARGET_VERSION="${AVAILABLE_UPGRADE}"
+
+# Get codename for target version
+case "${TARGET_VERSION}" in
+    "25.04") TARGET_CODENAME="plucky" ;;
+    "25.10") TARGET_CODENAME="questing" ;;
+    "26.04") TARGET_CODENAME="zesty" ;;  # Example - actual codename TBD
+    *) TARGET_CODENAME="unknown" ;;
+esac
+
+SNAPSHOT_SUFFIX="before-upgrade-to-${TARGET_CODENAME}"
+
+# Determine if more upgrades will be needed
+log_info "Checking full upgrade path to latest stable release..."
+# Get latest non-LTS release from Ubuntu releases
+LATEST_RELEASE=$(curl -s http://releases.ubuntu.com/ | grep -o 'href="[0-9]\{2\}\.[0-9]\{2\}/"' | grep -oP '\K[0-9.]+(?=/)' | sort -V | tail -1 || echo "")
+
+if [[ -n "${LATEST_RELEASE}" ]] && [[ "${TARGET_VERSION}" != "${LATEST_RELEASE}" ]]; then
+    UPGRADE_STEP="Step 1 of multiple"
+    NEXT_STEP_MSG="After this upgrade to ${TARGET_VERSION} completes, you'll need to upgrade again to reach ${LATEST_RELEASE}"
+    FULL_PATH="${CURRENT_VERSION} → ${TARGET_VERSION} → ... → ${LATEST_RELEASE}"
+else
+    UPGRADE_STEP="Final step"
+    NEXT_STEP_MSG="This upgrade will bring you to the latest stable release"
+    FULL_PATH="${CURRENT_VERSION} → ${TARGET_VERSION} (latest)"
+fi
+
 log_info "============================================================"
-log_info "Ubuntu 24.04 → 25.10 Upgrade Execution Script"
+log_info "Ubuntu Distribution Upgrade Script (${UPGRADE_STEP})"
+log_info "Current: ${CURRENT_VERSION} (${CURRENT_CODENAME})"
+log_info "Target:  ${TARGET_VERSION} (${TARGET_CODENAME})"
+log_info "Full upgrade path: ${FULL_PATH}"
 log_info "Started: $(date)"
 log_info "============================================================"
+echo ""
+log_info "${NEXT_STEP_MSG}"
 echo ""
 
 # ============================================================================
@@ -73,10 +120,10 @@ echo ""
 echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${RED}║                         ⚠️  WARNING ⚠️                          ║${NC}"
 echo -e "${RED}║                                                                ║${NC}"
-echo -e "${RED}║  This script will upgrade Ubuntu 24.04 LTS → 25.10            ║${NC}"
+echo -e "${RED}║  This will upgrade: ${CURRENT_VERSION} → ${TARGET_VERSION}                                  ║${NC}"
 echo -e "${RED}║                                                                ║${NC}"
 echo -e "${RED}║  • This is a ONE-WAY process (no downgrade path)              ║${NC}"
-echo -e "${RED}║  • 25.10 is supported for 9 months only (until July 2026)     ║${NC}"
+echo -e "${RED}║  • ${TARGET_VERSION} is an interim release (9 month support)            ║${NC}"
 echo -e "${RED}║  • Requires 30-60 minutes and stable internet                 ║${NC}"
 echo -e "${RED}║  • System will REBOOT after upgrade                           ║${NC}"
 echo -e "${RED}║                                                                ║${NC}"
@@ -247,7 +294,7 @@ echo ""
 # ============================================================================
 log_step "Step 5: Creating final pre-upgrade snapshot..."
 
-FINAL_SNAPSHOT="rpool/root@before-upgrade-to-questing-${UPGRADE_TIMESTAMP}"
+FINAL_SNAPSHOT="rpool/root@${SNAPSHOT_SUFFIX}-${UPGRADE_TIMESTAMP}"
 if zfs snapshot "${FINAL_SNAPSHOT}"; then
     log_info "✓ Created snapshot: ${FINAL_SNAPSHOT}"
 else
@@ -258,7 +305,7 @@ fi
 # Snapshot all datasets
 DATASETS=$(zfs list -H -o name -r rpool | grep -v "^rpool$" || true)
 for dataset in ${DATASETS}; do
-    zfs snapshot "${dataset}@before-upgrade-to-questing-${UPGRADE_TIMESTAMP}" 2>/dev/null || true
+    zfs snapshot "${dataset}@${SNAPSHOT_SUFFIX}-${UPGRADE_TIMESTAMP}" 2>/dev/null || true
 done
 
 log_info "✓ All datasets snapshotted"
@@ -309,9 +356,10 @@ sleep 5
 
 # Run the upgrade
 # Note: Do NOT use -d flag (that targets development releases)
-# With Prompt=normal, this will upgrade to latest stable interim release (25.10)
+# With Prompt=normal, this will upgrade to next available interim release
 if do-release-upgrade -f DistUpgradeViewNonInteractive; then
-    log_info "✓ Distribution upgrade completed successfully"
+    log_info "✓ Distribution upgrade to ${TARGET_VERSION} completed successfully"
+    log_info "${NEXT_STEP_MSG}"
 else
     UPGRADE_EXIT_CODE=$?
     log_error "Distribution upgrade failed with exit code: ${UPGRADE_EXIT_CODE}"
@@ -328,10 +376,10 @@ echo ""
 # Note: do-release-upgrade typically reboots automatically
 # This section runs if we somehow didn't reboot
 
-if grep -q "VERSION_ID=\"25.10\"" /etc/os-release 2>/dev/null; then
+if grep -q "VERSION_ID=\"${TARGET_VERSION}\"" /etc/os-release 2>/dev/null; then
     log_step "Step 7: Post-upgrade verification..."
 
-    log_info "Upgrade to Ubuntu 25.10 successful!"
+    log_info "Upgrade to Ubuntu ${TARGET_VERSION} successful!"
     log_info "Current version: $(lsb_release -ds)"
 
     # Check ZFS pool after upgrade
@@ -346,9 +394,14 @@ if grep -q "VERSION_ID=\"25.10\"" /etc/os-release 2>/dev/null; then
 
     echo ""
     log_info "============================================================"
-    log_info "UPGRADE PHASE 1 COMPLETE"
+    log_info "${UPGRADE_STEP} COMPLETE"
     log_info "============================================================"
     echo ""
+
+    if [[ "${TARGET_VERSION}" == "25.04" ]]; then
+        log_warn "⚠️  After reboot, run this script again to complete upgrade to 25.10"
+        log_warn "    sudo ./03-upgrade-execution.sh"
+    fi
     log_info "The distribution upgrade is complete, but the system needs"
     log_info "to be rebooted and dracut migration must be performed."
     echo ""

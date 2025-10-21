@@ -68,6 +68,7 @@ log_step "Step 1: Finding upgrade snapshots..."
 
 # Look for snapshots created during upgrade
 SNAPSHOT_PATTERNS=(
+    "before-upgrade-to-plucky-"
     "before-upgrade-to-questing-"
     "pre-questing-upgrade-"
     "before-dracut-migration-"

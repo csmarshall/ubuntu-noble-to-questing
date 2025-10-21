@@ -10,6 +10,17 @@ This upgrade transitions your system from:
 - **Linux kernel 6.8** → **Linux kernel 6.17**
 - **OpenZFS 2.2.2** → **OpenZFS 2.3.4**
 
+### ⚠️ Two-Step Upgrade Process
+
+**Important:** Ubuntu does not support skipping interim releases. The upgrade path is:
+
+1. **Step 1:** Ubuntu 24.04 → Ubuntu 25.04 (Plucky Puffin)
+2. **Step 2:** Ubuntu 25.04 → Ubuntu 25.10 (Questing Quokka)
+
+**The upgrade script automatically detects this** and guides you through each step. After completing the first upgrade to 25.04 and rebooting, simply run the same script again to upgrade to 25.10.
+
+**Why two steps?** Ubuntu 24.10 reached end-of-life in July 2025. The upgrade tool automatically skips EOL releases, jumping from 24.04 directly to 25.04, but cannot skip multiple releases to reach 25.10 in one step.
+
 ## Critical Considerations
 
 ### ⚠️ Important Warnings
@@ -49,7 +60,13 @@ This upgrade transitions your system from:
 
 ## Upgrade Strategy
 
-This upgrade follows a **phased, reversible approach** with validation at each step:
+This upgrade follows a **phased, reversible approach** with validation at each step.
+
+**Note:** The upgrade happens in **two sequential runs** of the upgrade script:
+- **First run:** 24.04 → 25.04 (with reboot)
+- **Second run:** 25.04 → 25.10 (with reboot)
+
+The script automatically detects which step you're on and guides you appropriately.
 
 ### Phase 1: Pre-Upgrade Preparation
 - System health verification
@@ -58,11 +75,20 @@ This upgrade follows a **phased, reversible approach** with validation at each s
 - Create recovery snapshots
 - Document current system state
 
-### Phase 2: System Upgrade Execution
+### Phase 2: System Upgrade Execution (24.04 → 25.04)
+- Auto-detect current version and available upgrades
+- Calculate full upgrade path to latest release
 - Enable interim release upgrades
 - Download and verify packages
-- Perform distribution upgrade
+- Perform distribution upgrade to 25.04
 - Handle package conflicts
+- Reboot to 25.04
+
+### Phase 2b: System Upgrade Execution (25.04 → 25.10)
+- Re-run same upgrade script after reboot
+- Auto-detect you're on 25.04
+- Upgrade to 25.10 (final step)
+- Reboot to 25.10
 
 ### Phase 3: Post-Upgrade Dracut Migration
 - Install dracut and zfs-dracut
@@ -124,25 +150,38 @@ cat 08-troubleshooting.md
 sudo ./02-pre-upgrade-backup.sh
 ```
 
-### Step 2: Execute Upgrade
+### Step 2: Execute Upgrade to 25.04
 ```bash
-# This will take 30-60 minutes depending on connection speed
+# First upgrade: 24.04 → 25.04 (30-45 minutes)
+# Script auto-detects you're on 24.04 and will upgrade to 25.04
 sudo ./03-upgrade-execution.sh
+
+# System will reboot to 25.04
 ```
 
-### Step 3: Migrate to Dracut
+### Step 3: Execute Upgrade to 25.10
+```bash
+# After reboot on 25.04, run the same script again
+# Second upgrade: 25.04 → 25.10 (30-45 minutes)
+# Script auto-detects you're on 25.04 and will upgrade to 25.10
+sudo ./03-upgrade-execution.sh
+
+# System will reboot to 25.10
+```
+
+### Step 4: Migrate to Dracut
 ```bash
 # After reboot on 25.10, migrate initramfs to dracut
 sudo ./04-post-upgrade-dracut.sh
 ```
 
-### Step 4: Optimize Boot Configuration
+### Step 5: Optimize Boot Configuration
 ```bash
 # Optimize dracut and boot settings for 25.10
 sudo ./05-boot-optimization.sh
 ```
 
-### Step 5: Test and Validate
+### Step 6: Test and Validate
 ```bash
 # Run comprehensive validation tests
 sudo ./06-testing-validation.sh
@@ -162,12 +201,16 @@ sudo ./06-testing-validation.sh
 | Phase | Estimated Time |
 |-------|----------------|
 | Pre-upgrade preparation | 30 minutes |
-| Download packages | 15-30 minutes (depends on connection) |
-| Upgrade execution | 30-45 minutes |
+| **First upgrade** (24.04 → 25.04) | **45-60 minutes** |
+| Reboot to 25.04 | 2-5 minutes |
+| **Second upgrade** (25.04 → 25.10) | **45-60 minutes** |
+| Reboot to 25.10 | 2-5 minutes |
 | Dracut migration | 10-15 minutes |
 | Boot optimization | 5-10 minutes |
 | Testing and validation | 20-30 minutes |
-| **Total** | **2-3 hours** |
+| **Total** | **3-4 hours** |
+
+**Note:** The upgrade happens in two sequential runs of the upgrade script with reboots in between.
 
 ## Support and Resources
 
