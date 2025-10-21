@@ -282,11 +282,23 @@ if ! dpkg -l | grep -q "^ii.*update-manager-core"; then
     DEBIAN_FRONTEND=noninteractive apt-get install -y update-manager-core
 fi
 
+# Ensure Prompt=normal is set (in case user chose package maintainer's version)
+log_info "Ensuring Prompt=normal for interim release upgrade..."
+sed -i 's/^Prompt=.*/Prompt=normal/' /etc/update-manager/release-upgrades
+log_info "✓ Set Prompt=normal in /etc/update-manager/release-upgrades"
+
 log_info "Starting do-release-upgrade..."
 echo ""
 echo "============================================================"
 echo "IMPORTANT: During the upgrade you will be prompted:"
-echo "  - Config file conflicts: Choose [N]o to keep your current"
+echo ""
+echo "  - /etc/update-manager/release-upgrades conflict:"
+echo "    Choose [Y]es (install maintainer's version)"
+echo "    Script will re-configure it automatically after"
+echo ""
+echo "  - Other config file conflicts:"
+echo "    Generally choose [N]o to keep your customizations"
+echo ""
 echo "  - Restart services: Choose [Yes]"
 echo "  - Remove obsolete packages: Choose [Yes]"
 echo "  - Reboot: Choose [Yes] or let this script handle it"

@@ -116,6 +116,45 @@ sudo apt-mark unhold $(apt-mark showhold)
 
 ## Upgrade Execution Issues
 
+### Issue: "There is no development version of an LTS available"
+
+**Symptoms**:
+- `do-release-upgrade` says "There is no development version of an LTS available"
+- Script exits with "To upgrade to the latest non-LTS development release set Prompt=normal"
+- Happens after choosing [Y] for `/etc/update-manager/release-upgrades` conflict
+
+**Cause**:
+When you choose [Y] to install the package maintainer's version of `/etc/update-manager/release-upgrades`, it resets `Prompt=lts`. This prevents upgrading from 24.04 LTS to 25.10 (non-LTS interim release).
+
+**Solutions**:
+
+1. **Automatic fix** (if using latest script):
+   ```bash
+   # The script now automatically fixes this
+   # Just re-run the upgrade script
+   sudo ./03-upgrade-execution.sh
+   ```
+
+2. **Manual fix**:
+   ```bash
+   # Set Prompt=normal to allow interim release upgrades
+   sudo sed -i 's/^Prompt=.*/Prompt=normal/' /etc/update-manager/release-upgrades
+
+   # Verify the change
+   grep Prompt /etc/update-manager/release-upgrades
+   # Should show: Prompt=normal
+
+   # Retry upgrade
+   sudo ./03-upgrade-execution.sh
+   ```
+
+**Prevention**:
+- When prompted for `/etc/update-manager/release-upgrades` conflict, choose [Y]
+- The script will automatically reconfigure it after package installation
+- For other config files, generally choose [N] to keep your customizations
+
+---
+
 ### Issue: "Repository not found" or Mirror Errors
 
 **Symptoms**:
