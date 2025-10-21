@@ -217,13 +217,15 @@ echo ""
 # ============================================================================
 log_step "Step 1: Verifying system prerequisites..."
 
-# Verify Ubuntu version
-if ! grep -q "VERSION_ID=\"24.04\"" /etc/os-release; then
-    log_error "This script is for Ubuntu 24.04 only"
-    log_error "Current version: $(lsb_release -rs)"
+# Verify Ubuntu version (supports 24.04 → 25.04 → 25.10 path)
+CURRENT_VERSION_CHECK=$(lsb_release -rs)
+if [[ "${CURRENT_VERSION_CHECK}" != "24.04" ]] && [[ "${CURRENT_VERSION_CHECK}" != "25.04" ]]; then
+    log_error "This script is for Ubuntu 24.04 or 25.04 only"
+    log_error "Current version: ${CURRENT_VERSION_CHECK}"
+    log_error "Upgrade path: 24.04 → 25.04 → 25.10"
     exit 1
 fi
-log_info "✓ Ubuntu 24.04 detected: $(lsb_release -ds)"
+log_info "✓ Ubuntu ${CURRENT_VERSION_CHECK} detected: $(lsb_release -ds)"
 
 # Verify ZFS pool health
 if ! zpool list rpool &>/dev/null; then
