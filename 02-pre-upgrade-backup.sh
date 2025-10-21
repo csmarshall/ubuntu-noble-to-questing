@@ -300,7 +300,7 @@ If upgrade fails, you can restore from ZFS snapshots:
    sudo zpool import -f rpool
 
 3. Rollback to pre-upgrade snapshot:
-   sudo zfs rollback rpool/ROOT/ubuntu@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}
+   sudo zfs rollback rpool/root@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}
 
 4. Restore other datasets if needed:
 $(for dataset in "${DATASETS[@]}"; do echo "   sudo zfs rollback ${dataset}@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}"; done)
@@ -316,12 +316,12 @@ If system still boots but you want to use the snapshot:
 
 1. At GRUB menu, press 'e' to edit boot entry
 2. Find the line starting with 'linux'
-3. Change: root=ZFS=rpool/ROOT/ubuntu
-   To:     root=ZFS=rpool/ROOT/ubuntu@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}
+3. Change: root=ZFS=rpool/root
+   To:     root=ZFS=rpool/root@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}
 4. Press Ctrl+X to boot
 
 5. If successful, clone the snapshot to make it permanent:
-   sudo zfs clone rpool/ROOT/ubuntu@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP} rpool/ROOT/ubuntu-restored
+   sudo zfs clone rpool/root@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP} rpool/root-restored
    # Then set it as the bootfs and reboot
 
 ================================================================================
@@ -405,7 +405,7 @@ echo "2. Verify snapshots were created:"
 echo "   zfs list -t snapshot | grep ${SNAPSHOT_PREFIX}"
 echo ""
 echo "3. Test snapshot rollback (OPTIONAL):"
-echo "   sudo zfs rollback -n rpool/ROOT/ubuntu@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}"
+echo "   sudo zfs rollback -n rpool/root@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}"
 echo "   (The -n flag does a dry-run)"
 echo ""
 echo "4. If everything looks good, proceed with upgrade:"

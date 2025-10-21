@@ -238,7 +238,7 @@ echo ""
 # ============================================================================
 log_step "Step 5: Creating final pre-upgrade snapshot..."
 
-FINAL_SNAPSHOT="rpool/ROOT/ubuntu@before-upgrade-to-questing-${UPGRADE_TIMESTAMP}"
+FINAL_SNAPSHOT="rpool/root@before-upgrade-to-questing-${UPGRADE_TIMESTAMP}"
 if zfs snapshot "${FINAL_SNAPSHOT}"; then
     log_info "✓ Created snapshot: ${FINAL_SNAPSHOT}"
 else

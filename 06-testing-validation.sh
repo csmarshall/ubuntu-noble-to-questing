@@ -426,7 +426,7 @@ else
 fi
 
 log_test "7.3: ZFS snapshot creation"
-TEST_SNAPSHOT="rpool/ROOT/ubuntu@validation-test-${VALIDATION_TIMESTAMP}"
+TEST_SNAPSHOT="rpool/root@validation-test-${VALIDATION_TIMESTAMP}"
 if zfs snapshot "${TEST_SNAPSHOT}"; then
     test_pass "ZFS snapshot creation successful"
     # Clean up test snapshot

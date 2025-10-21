@@ -73,7 +73,7 @@ sudo zfs list -t snapshot
 sudo zfs list -t snapshot -o name,used,referenced | grep "before-upgrade"
 
 # Verify snapshot is complete
-sudo zfs get all rpool/ROOT/ubuntu@SNAPSHOT_NAME
+sudo zfs get all rpool/root@SNAPSHOT_NAME
 ```
 
 ### Step 3: Create Emergency Snapshot (Optional but Recommended)
@@ -88,10 +88,10 @@ sudo zfs snapshot -r rpool@emergency-before-rollback-$(date +%Y%m%d-%H%M%S)
 ```bash
 # WARNING: This will destroy all changes made after the snapshot
 # Rollback root filesystem
-sudo zfs rollback rpool/ROOT/ubuntu@SNAPSHOT_NAME
+sudo zfs rollback rpool/root@SNAPSHOT_NAME
 
 # Example:
-# sudo zfs rollback rpool/ROOT/ubuntu@before-upgrade-to-questing-20250115-140530
+# sudo zfs rollback rpool/root@before-upgrade-to-questing-20250115-140530
 ```
 
 ### Step 5: Rollback Other Datasets
@@ -101,8 +101,9 @@ sudo zfs rollback rpool/ROOT/ubuntu@SNAPSHOT_NAME
 zfs list -r rpool
 
 # Rollback each dataset (adjust names as needed)
-sudo zfs rollback rpool/ROOT/ubuntu/var@SNAPSHOT_NAME
-sudo zfs rollback rpool/ROOT/ubuntu/srv@SNAPSHOT_NAME
+sudo zfs rollback rpool/var@SNAPSHOT_NAME
+sudo zfs rollback rpool/var/lib@SNAPSHOT_NAME
+sudo zfs rollback rpool/var/log@SNAPSHOT_NAME
 # ... repeat for all datasets
 ```
 
@@ -111,7 +112,7 @@ Or rollback recursively (if snapshot name is consistent):
 ```bash
 # Rollback all datasets recursively
 # Note: Use with caution, cannot be undone without another snapshot
-sudo zfs rollback -r rpool/ROOT/ubuntu@SNAPSHOT_NAME
+sudo zfs rollback -r rpool/root@SNAPSHOT_NAME
 ```
 
 ### Step 6: Update Boot Configuration
@@ -208,13 +209,13 @@ sudo zfs list -t snapshot | grep "before-upgrade"
 
 ```bash
 # Rollback root filesystem
-sudo zfs rollback rpool/ROOT/ubuntu@SNAPSHOT_NAME
+sudo zfs rollback rpool/root@SNAPSHOT_NAME
 
 # If rolling back multiple datasets, do each one:
-sudo zfs rollback rpool/ROOT/ubuntu/var@SNAPSHOT_NAME
+sudo zfs rollback rpool/var@SNAPSHOT_NAME
 
 # Or rollback recursively
-sudo zfs rollback -r rpool/ROOT/ubuntu@SNAPSHOT_NAME
+sudo zfs rollback -r rpool/root@SNAPSHOT_NAME
 ```
 
 ### Step 6: Mount Rolled-Back System
@@ -224,8 +225,8 @@ sudo zfs rollback -r rpool/ROOT/ubuntu@SNAPSHOT_NAME
 sudo mkdir -p /mnt
 
 # Mount root filesystem
-sudo zfs set mountpoint=/mnt rpool/ROOT/ubuntu
-sudo zfs mount rpool/ROOT/ubuntu
+sudo zfs set mountpoint=/mnt rpool/root
+sudo zfs mount rpool/root
 
 # Mount boot partition
 sudo mount /dev/disk/by-label/EFI /mnt/boot/efi
@@ -269,7 +270,7 @@ for dir in run sys proc dev; do
 done
 
 sudo umount /mnt/boot/efi
-sudo zfs unmount rpool/ROOT/ubuntu
+sudo zfs unmount rpool/root
 
 # Export pool
 sudo zpool export rpool
@@ -309,12 +310,12 @@ sudo modprobe zfs
 sudo zpool import -o readonly=on rpool
 
 # Option 1: Backup via zfs send
-sudo zfs send rpool/ROOT/ubuntu@latest | gzip > /media/backup/ubuntu-backup.zfs.gz
+sudo zfs send rpool/root@latest | gzip > /media/backup/ubuntu-backup.zfs.gz
 
 # Option 2: Backup via rsync
 sudo mkdir /mnt/rpool
-sudo zfs set mountpoint=/mnt/rpool rpool/ROOT/ubuntu
-sudo zfs mount rpool/ROOT/ubuntu
+sudo zfs set mountpoint=/mnt/rpool rpool/root
+sudo zfs mount rpool/root
 rsync -aAXv /mnt/rpool/ /media/backup/ubuntu-files/
 
 # Backup home directories and /etc
@@ -349,21 +350,21 @@ If system won't boot normally, try these recovery methods:
 
 1. At GRUB menu, press `e` to edit boot entry
 2. Find line starting with `linux` (kernel line)
-3. Change `root=ZFS=rpool/ROOT/ubuntu` to `root=ZFS=rpool/ROOT/ubuntu@SNAPSHOT_NAME`
+3. Change `root=ZFS=rpool/root` to `root=ZFS=rpool/root@SNAPSHOT_NAME`
 4. Press `Ctrl+X` to boot
 
 Example:
 ```
-Before: root=ZFS=rpool/ROOT/ubuntu
-After:  root=ZFS=rpool/ROOT/ubuntu@before-upgrade-to-questing-20250115-140530
+Before: root=ZFS=rpool/root
+After:  root=ZFS=rpool/root@before-upgrade-to-questing-20250115-140530
 ```
 
 If successful:
 5. System boots from snapshot (read-only by default)
 6. Clone snapshot to make it permanent:
 ```bash
-sudo zfs clone rpool/ROOT/ubuntu@SNAPSHOT_NAME rpool/ROOT/ubuntu-restored
-sudo zfs set bootfs=rpool/ROOT/ubuntu-restored rpool
+sudo zfs clone rpool/root@SNAPSHOT_NAME rpool/root-restored
+sudo zfs set bootfs=rpool/root-restored rpool
 sudo reboot
 ```
 
@@ -400,7 +401,7 @@ After verifying 24.04 is stable:
 sudo zfs list -t snapshot | grep "before-upgrade\|emergency"
 
 # Remove snapshots (careful!)
-sudo zfs destroy rpool/ROOT/ubuntu@SNAPSHOT_NAME
+sudo zfs destroy rpool/root@SNAPSHOT_NAME
 ```
 
 ### 3. Update System
@@ -438,10 +439,10 @@ sudo efibootmgr
 **Solution**:
 ```bash
 # Create new snapshot of current state
-sudo zfs snapshot rpool/ROOT/ubuntu@current-state
+sudo zfs snapshot rpool/root@current-state
 
 # Force rollback (destroys current state)
-sudo zfs rollback -r rpool/ROOT/ubuntu@SNAPSHOT_NAME
+sudo zfs rollback -r rpool/root@SNAPSHOT_NAME
 ```
 
 ### Issue: "Pool cannot be imported"

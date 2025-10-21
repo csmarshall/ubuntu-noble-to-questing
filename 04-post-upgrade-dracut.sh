@@ -123,8 +123,8 @@ log_step "Step 2: Creating pre-migration snapshot..."
 
 SNAPSHOT_NAME="before-dracut-migration-${MIGRATION_TIMESTAMP}"
 
-if zfs snapshot "rpool/ROOT/ubuntu@${SNAPSHOT_NAME}"; then
-    log_info "✓ Created snapshot: rpool/ROOT/ubuntu@${SNAPSHOT_NAME}"
+if zfs snapshot "rpool/root@${SNAPSHOT_NAME}"; then
+    log_info "✓ Created snapshot: rpool/root@${SNAPSHOT_NAME}"
 else
     log_error "Failed to create snapshot"
     exit 1
@@ -502,7 +502,7 @@ If boot fails after migration:
 2. Import ZFS pool:
    sudo zpool import -f rpool
 3. Rollback to pre-migration snapshot:
-   sudo zfs rollback rpool/ROOT/ubuntu@${SNAPSHOT_NAME}
+   sudo zfs rollback rpool/root@${SNAPSHOT_NAME}
 4. Reboot
 
 ================================================================================

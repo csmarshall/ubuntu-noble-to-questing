@@ -159,9 +159,9 @@ sudo systemctl status ssh
 sudo zfs list -t snapshot
 
 # Check snapshot creation works
-sudo zfs snapshot rpool/ROOT/ubuntu@pre-upgrade-test
+sudo zfs snapshot rpool/root@pre-upgrade-test
 sudo zfs list -t snapshot | grep pre-upgrade-test
-sudo zfs destroy rpool/ROOT/ubuntu@pre-upgrade-test
+sudo zfs destroy rpool/root@pre-upgrade-test
 ```
 
 **Requirements**:
@@ -172,7 +172,7 @@ sudo zfs destroy rpool/ROOT/ubuntu@pre-upgrade-test
 #### ✅ External Backup (Strongly Recommended)
 ```bash
 # Send ZFS filesystem to external backup
-sudo zfs send rpool/ROOT/ubuntu@backup | ssh backup-server "zfs receive tank/backups/ubuntu-noble-$(date +%F)"
+sudo zfs send rpool/root@backup | ssh backup-server "zfs receive tank/backups/ubuntu-noble-$(date +%F)"
 
 # OR: Use rsync to backup important data
 sudo rsync -aAXv --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} / /mnt/external-backup/

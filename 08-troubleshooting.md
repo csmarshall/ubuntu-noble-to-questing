@@ -51,7 +51,7 @@ sudo apt autoremove
 sudo zfs list -t snapshot -o name,used
 
 # Remove old snapshots
-sudo zfs destroy rpool/ROOT/ubuntu@old-snapshot-name
+sudo zfs destroy rpool/root@old-snapshot-name
 ```
 
 4. Clean system logs:
@@ -200,7 +200,7 @@ sudo do-release-upgrade -d
 
 5. If upgrade won't continue, restore from snapshot:
 ```bash
-sudo zfs rollback rpool/ROOT/ubuntu@before-upgrade-to-questing-TIMESTAMP
+sudo zfs rollback rpool/root@before-upgrade-to-questing-TIMESTAMP
 ```
 
 ---
@@ -220,8 +220,8 @@ sudo zfs rollback rpool/ROOT/ubuntu@before-upgrade-to-questing-TIMESTAMP
 
 1. At GRUB menu, press `e` to edit boot entry
 2. Find line starting with `linux`
-3. Change `root=ZFS=rpool/ROOT/ubuntu` to include snapshot:
-   `root=ZFS=rpool/ROOT/ubuntu@before-upgrade-to-questing-TIMESTAMP`
+3. Change `root=ZFS=rpool/root` to include snapshot:
+   `root=ZFS=rpool/root@before-upgrade-to-questing-TIMESTAMP`
 4. Press `Ctrl+X` to boot
 
 If successful, perform full rollback (see 07-rollback-procedure.md)
@@ -231,7 +231,7 @@ If successful, perform full rollback (see 07-rollback-procedure.md)
 1. At emergency shell, try manual import:
 ```bash
 zpool import -f rpool
-zfs mount rpool/ROOT/ubuntu
+zfs mount rpool/root
 exit
 ```
 
@@ -276,7 +276,7 @@ zpool import
 3. Mount and boot:
 ```bash
 zpool import -f rpool
-mount -t zfs rpool/ROOT/ubuntu /sysroot
+mount -t zfs rpool/root /sysroot
 exit
 ```
 
@@ -583,7 +583,7 @@ sudo dracut --force --kver KERNEL_VERSION
 3. Check kernel command line parameters:
 ```bash
 cat /proc/cmdline
-# Should include: root=ZFS=rpool/ROOT/ubuntu
+# Should include: root=ZFS=rpool/root
 ```
 
 4. Verify in /etc/default/grub:
@@ -841,11 +841,11 @@ sudo zfs list -t snapshot -r rpool
 5. **Rollback or mount**:
 ```bash
 # Option A: Rollback to pre-upgrade snapshot
-sudo zfs rollback rpool/ROOT/ubuntu@before-upgrade-TIMESTAMP
+sudo zfs rollback rpool/root@before-upgrade-TIMESTAMP
 
 # Option B: Mount and repair
-sudo zfs set mountpoint=/mnt rpool/ROOT/ubuntu
-sudo zfs mount rpool/ROOT/ubuntu
+sudo zfs set mountpoint=/mnt rpool/root
+sudo zfs mount rpool/root
 # Make repairs in /mnt
 ```
 
@@ -862,7 +862,7 @@ exit
 7. **Unmount and reboot**:
 ```bash
 for dir in run sys proc dev; do sudo umount /mnt/$dir; done
-sudo zfs unmount rpool/ROOT/ubuntu
+sudo zfs unmount rpool/root
 sudo zpool export rpool
 sudo reboot
 ```
