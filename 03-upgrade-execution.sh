@@ -315,7 +315,7 @@ echo ""
 # ============================================================================
 # STEP 6: Distribution Upgrade Execution
 # ============================================================================
-log_step "Step 6: Executing distribution upgrade to 25.10..."
+log_step "Step 6: Executing distribution upgrade to ${TARGET_VERSION}..."
 
 log_warn "This step will take 30-60 minutes depending on internet speed"
 log_warn "DO NOT interrupt the process once it starts"
