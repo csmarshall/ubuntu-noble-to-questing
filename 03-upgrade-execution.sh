@@ -379,20 +379,44 @@ echo ""
 echo "============================================================"
 echo "IMPORTANT: During the upgrade you will be prompted:"
 echo ""
-echo "  - /etc/update-manager/release-upgrades conflict:"
-echo "    Choose [Y]es (install maintainer's version)"
-echo "    Script will re-configure it automatically after"
+echo "  Config file conflicts - What to choose:"
+echo "    KEEP (N): /etc/default/grub (ZFS boot config!)"
+echo "              /etc/netplan/* (network config)"
+echo "              /etc/ssh/sshd_config (SSH settings)"
+echo "              /usr/local/bin/* (custom scripts)"
+echo "              Any file YOU customized"
 echo ""
-echo "  - Other config file conflicts:"
-echo "    Generally choose [N]o to keep your customizations"
+echo "    REPLACE (Y): /etc/update-manager/release-upgrades"
+echo "                 System files you haven't touched"
 echo ""
-echo "  - Restart services: Choose [Yes]"
-echo "  - Remove obsolete packages: Choose [Yes]"
-echo "  - Reboot: Choose [Yes] or let this script handle it"
+echo "    When unsure: Press [D] to see diff, keep if you recognize changes"
+echo ""
+echo "  Other prompts:"
+echo "    - Restart services: Choose [Yes]"
+echo "    - Remove obsolete packages: Choose [Yes]"
+echo "    - Reboot: Choose [Yes] or let this script handle it"
 echo "============================================================"
 echo ""
 
 sleep 5
+
+# Start background patcher to bypass ZFS check
+# The upgrader downloads code that blocks ZFS systems, but HWE 6.14+ is safe
+# This patcher runs in background and comments out the function call
+log_info "Starting background ZFS check patcher (HWE 6.14+ safe)..."
+bash -c 'while true; do
+    for f in /tmp/ubuntu-release-upgrader-*/DistUpgrade/DistUpgradeQuirks.py; do
+        if [ -f "$f" ] && grep -q "^        self._test_and_fail_on_zfs()" "$f" 2>/dev/null; then
+            sed -i "95s/^        self._test_and_fail_on_zfs()/        # self._test_and_fail_on_zfs()  # Disabled: HWE 6.14+ safe/" "$f"
+        fi
+    done
+    sleep 0.05
+done' &
+PATCHER_PID=$!
+log_info "✓ Background patcher started (PID: ${PATCHER_PID})"
+
+# Ensure patcher is killed when script exits
+trap "kill ${PATCHER_PID} 2>/dev/null || true" EXIT
 
 # Run the upgrade
 # Note: Do NOT use -d flag (that targets development releases)

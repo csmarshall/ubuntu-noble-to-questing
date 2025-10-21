@@ -114,6 +114,33 @@ sudo apt-mark unhold $(apt-mark showhold)
 
 ---
 
+## Configuration File Conflicts During Upgrade
+
+During the upgrade, you'll be prompted about configuration file conflicts. Here's what to choose:
+
+### Files to KEEP (Choose N - Keep your current version):
+
+- **`/etc/default/grub`** - Contains ZFS-specific boot parameters configured by ubuntu-zfs-mirror
+- **`/etc/netplan/*`** - Your network configuration (unless you want DHCP reset)
+- **`/usr/local/bin/*`** - Custom scripts (like sync-mirror-boot)
+- **`/etc/fstab`** - ZFS mount points (though ZFS usually doesn't use fstab)
+- **`/etc/ssh/sshd_config`** - Your SSH customizations
+- **Any files you've customized** - If you recognize it and customized it, keep it
+
+### Files to REPLACE (Choose Y - Install package maintainer's version):
+
+- **`/etc/update-manager/release-upgrades`** - The script re-configures this anyway
+- **System service files** you haven't modified
+- **Default configs** you haven't customized
+
+### When In Doubt:
+
+1. Choose **`D`** to see the differences
+2. If the diff shows settings you added/changed, choose **`N`** (keep yours)
+3. If the diff shows only package maintainer changes, choose **`Y`** (use new)
+
+---
+
 ## Upgrade Execution Issues
 
 ### Issue: Script Shows "No upgrade available"
