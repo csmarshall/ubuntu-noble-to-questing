@@ -243,6 +243,12 @@ INSTALLED_KERNELS=$(ls /lib/modules/ | grep -E '^[0-9]' || true)
 
 log_info "Regenerating optimized initramfs for all kernels..."
 for kernel in ${INSTALLED_KERNELS}; do
+    # Skip kernels without modules.dep (old/incomplete kernels)
+    if [[ ! -f "/lib/modules/${kernel}/modules.dep" ]]; then
+        log_warn "Skipping ${kernel} (modules.dep missing - old kernel)"
+        continue
+    fi
+
     log_info "Regenerating for ${kernel}..."
 
     # Show size before
