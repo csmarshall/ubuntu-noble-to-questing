@@ -488,6 +488,74 @@ sudo reboot
 
 ---
 
+## Retrieving Individual Files from Snapshots
+
+If you only need specific files from the pre-upgrade state (without full rollback):
+
+### Method 1: Browse Snapshot Directories
+
+ZFS snapshots are accessible via the hidden `.zfs/snapshot/` directory:
+
+```bash
+# Navigate to snapshot
+cd /.zfs/snapshot/pre-questing-upgrade-20251021-114853/
+
+# Or for specific dataset:
+cd /root/.zfs/snapshot/pre-questing-upgrade-20251021-114853/
+cd /etc/.zfs/snapshot/pre-questing-upgrade-20251021-114853/
+
+# Copy file you need
+cp /.zfs/snapshot/pre-questing-upgrade-20251021-114853/etc/some-config.conf ~/
+```
+
+### Method 2: Clone Snapshot for Extended Recovery
+
+```bash
+# Clone the snapshot to a temporary dataset
+sudo zfs clone rpool/root@pre-questing-upgrade-20251021-114853 rpool/temp-recovery
+
+# The clone is mounted and writable at /rpool/temp-recovery
+# Browse and copy files as needed
+
+# When done, destroy the clone
+sudo zfs destroy rpool/temp-recovery
+```
+
+### Method 3: Compare Files
+
+```bash
+# Compare current file with snapshot version
+diff /etc/nginx/nginx.conf /etc/.zfs/snapshot/pre-questing-upgrade-20251021-114853/nginx/nginx.conf
+
+# Or use vimdiff for side-by-side
+vimdiff /etc/some-file /etc/.zfs/snapshot/pre-questing-upgrade-20251021-114853/some-file
+```
+
+### Examples
+
+```bash
+# Restore a single configuration file
+sudo cp /etc/.zfs/snapshot/pre-questing-upgrade-20251021-114853/ssh/sshd_config /etc/ssh/
+
+# Recover a deleted script
+cp /root/.zfs/snapshot/pre-questing-upgrade-20251021-114853/my-script.sh ~/
+
+# Extract old cron jobs
+sudo cp -r /var/spool/cron/.zfs/snapshot/pre-questing-upgrade-20251021-114853/crontabs /tmp/old-cron
+
+# Restore entire directory (careful!)
+sudo rsync -av /etc/nginx/.zfs/snapshot/pre-questing-upgrade-20251021-114853/ /etc/nginx/
+```
+
+### Tips
+
+- Snapshots are **read-only** - you can browse and copy but not modify
+- The `.zfs` directory is hidden - use `ls -la` or `cd` directly to it
+- Snapshot paths exactly mirror the original filesystem structure
+- You can access snapshots even while the system is running
+
+---
+
 ## Post-Rollback Cleanup
 
 After successful rollback to Ubuntu 24.04:

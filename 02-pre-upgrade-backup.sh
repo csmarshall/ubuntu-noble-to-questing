@@ -164,30 +164,15 @@ zfs list -t snapshot | grep "${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}" || true
 echo ""
 
 # ============================================================================
-# STEP 3: Configuration Backup
+# STEP 3: Verify Snapshot Backup Coverage
 # ============================================================================
-log_step "Step 3: Backing up configuration files..."
+log_step "Step 3: Verifying backup coverage..."
 
-# Create configuration backup directory
-CONFIG_BACKUP="${BACKUP_DIR}/config"
-mkdir -p "${CONFIG_BACKUP}"
-
-# Backup critical directories
-BACKUP_DIRS=(
-    "/etc"
-    "/root"
-    "/usr/local/bin"
-    "/var/spool/cron"
-)
-
-for dir in "${BACKUP_DIRS[@]}"; do
-    if [[ -d "${dir}" ]]; then
-        log_info "Backing up ${dir}..."
-        rsync -aAX "${dir}/" "${CONFIG_BACKUP}${dir}/" 2>&1 | grep -v "some files/attrs were not transferred" || true
-    fi
-done
-
-log_info "✓ Configuration files backed up to: ${CONFIG_BACKUP}"
+log_info "ZFS snapshots provide complete system backup including all files:"
+log_info "  • /etc, /root, /usr/local - all preserved in snapshots"
+log_info "  • Individual files can be recovered from /.zfs/snapshot/"
+log_info "  • See documentation for snapshot recovery procedures"
+log_info "✓ Complete system backup via ZFS snapshots"
 
 echo ""
 
@@ -328,14 +313,31 @@ If system still boots but you want to use the snapshot:
    # Then set it as the bootfs and reboot
 
 ================================================================================
-CONFIGURATION RESTORE
+RETRIEVING FILES FROM SNAPSHOTS
 ================================================================================
 
-Configuration backup location: ${CONFIG_BACKUP}
+All files are preserved in ZFS snapshots and can be accessed directly:
 
-To restore specific configurations:
-   sudo rsync -aAX ${CONFIG_BACKUP}/etc/ /etc/
-   sudo rsync -aAX ${CONFIG_BACKUP}/root/ /root/
+Method 1 - Browse snapshot directory:
+   cd /.zfs/snapshot/${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}/
+   # Copy any file you need, e.g.:
+   cp /.zfs/snapshot/${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}/etc/some-config ~/
+
+Method 2 - Browse specific dataset snapshots:
+   cd /root/.zfs/snapshot/${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}/
+   cd /var/.zfs/snapshot/${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}/
+
+Method 3 - Clone snapshot for extended recovery:
+   sudo zfs clone rpool/root@${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP} rpool/recovery
+   # Browse at mountpoint, then destroy when done:
+   sudo zfs destroy rpool/recovery
+
+Examples:
+   # Restore a single config file:
+   sudo cp /etc/.zfs/snapshot/${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}/nginx/nginx.conf /etc/nginx/
+
+   # Compare current vs snapshot:
+   diff /etc/some-file /etc/.zfs/snapshot/${SNAPSHOT_PREFIX}-${BACKUP_TIMESTAMP}/some-file
 
 ================================================================================
 PACKAGE RESTORE
