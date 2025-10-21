@@ -228,7 +228,13 @@ if [[ -f /etc/update-manager/release-upgrades ]]; then
     sed -i 's/^Prompt=.*/Prompt=normal/' /etc/update-manager/release-upgrades
     log_info "✓ Set Prompt=normal in /etc/update-manager/release-upgrades"
 else
-    log_warn "release-upgrades file not found, will use do-release-upgrade -d"
+    log_warn "release-upgrades file not found, creating it..."
+    mkdir -p /etc/update-manager
+    cat > /etc/update-manager/release-upgrades << 'EOF'
+[DEFAULT]
+Prompt=normal
+EOF
+    log_info "✓ Created /etc/update-manager/release-upgrades with Prompt=normal"
 fi
 
 echo ""
@@ -287,9 +293,9 @@ echo ""
 sleep 5
 
 # Run the upgrade
-# Using -f DistUpgradeViewNonInteractive for automation, but this might need adjustment
-# for more user control
-if do-release-upgrade -d -f DistUpgradeViewNonInteractive; then
+# Note: Do NOT use -d flag (that targets development releases)
+# With Prompt=normal, this will upgrade to latest stable interim release (25.10)
+if do-release-upgrade -f DistUpgradeViewNonInteractive; then
     log_info "✓ Distribution upgrade completed successfully"
 else
     UPGRADE_EXIT_CODE=$?
