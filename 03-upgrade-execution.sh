@@ -397,9 +397,10 @@ sleep 5
 # Run the upgrade
 # Note: Do NOT use -d flag (that targets development releases)
 # With Prompt=normal, this will upgrade to next available interim release
-# Using --proposed to get newer release upgrader that handles ZFS systems properly
-# (older versions block ZFS upgrades due to kernel freeze bugs that don't affect HWE kernels)
-if do-release-upgrade --proposed -f DistUpgradeViewNonInteractive; then
+# Using --proposed to get newer release upgrader
+# Running in INTERACTIVE mode because non-interactive mode blocks ZFS systems
+# even though HWE kernel 6.14+ doesn't have the freeze bug
+if do-release-upgrade --proposed; then
     log_info "✓ Distribution upgrade to ${TARGET_VERSION} completed successfully"
     log_info "${NEXT_STEP_MSG}"
 else
