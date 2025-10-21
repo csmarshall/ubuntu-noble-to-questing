@@ -103,6 +103,7 @@ ubuntu-noble-to-questing/
 ├── 06-testing-validation.sh            # Comprehensive testing script
 ├── 07-rollback-procedure.md            # Emergency rollback guide
 ├── 08-troubleshooting.md               # Common issues and solutions
+├── 99-rollback-from-upgrade.sh         # Automated rollback script
 └── logs/                               # Upgrade logs directory
 ```
 
@@ -189,11 +190,29 @@ After upgrade completion, your system should have:
 
 ## Recovery Plan
 
-If the upgrade fails:
+If the upgrade fails or you need to rollback:
+
+### Automated Rollback (Recommended)
+
+If the system can still boot:
+
+```bash
+sudo ./99-rollback-from-upgrade.sh
+```
+
+This script will:
+- Auto-detect upgrade snapshots
+- Create safety snapshots before rollback
+- Rollback all ZFS datasets
+- Regenerate initramfs and GRUB configuration
+- Sync boot configuration to all mirror drives
+- Safely reboot to Ubuntu 24.04
+
+### Manual Rollback Methods
 
 1. **During upgrade**: Press Ctrl+C and restore from ZFS snapshot
-2. **After upgrade, before dracut migration**: Downgrade packages (see rollback guide)
-3. **After dracut migration**: Restore from ZFS snapshot and fresh install 24.04
+2. **After upgrade, system boots**: Use automated rollback script (99-rollback-from-upgrade.sh)
+3. **System won't boot**: Boot from Live USB and manually rollback (see 07-rollback-procedure.md)
 
 **Remember**: Always maintain bootable 24.04 LTS backups until confident in 25.10 stability.
 

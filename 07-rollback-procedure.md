@@ -11,6 +11,124 @@ This document provides detailed procedures for rolling back from Ubuntu 25.10 to
 
 ---
 
+## Quick Start: Automated Rollback (Recommended)
+
+If your system can still boot (even with issues), use the automated rollback script:
+
+```bash
+sudo ./99-rollback-from-upgrade.sh
+```
+
+### What the Automated Script Does
+
+1. **Auto-detects upgrade snapshots** matching these patterns:
+   - `before-upgrade-to-questing-YYYYMMDD-HHMMSS`
+   - `pre-questing-upgrade-YYYYMMDD-HHMMSS`
+   - `before-dracut-migration-YYYYMMDD-HHMMSS`
+
+2. **Groups snapshots by timestamp** and lets you select which to rollback to
+
+3. **Creates safety snapshots** of current state before rollback:
+   - `before-rollback-YYYYMMDD-HHMMSS`
+
+4. **Rolls back all datasets** to the selected snapshot
+
+5. **Regenerates boot configuration**:
+   - Regenerates initramfs for all kernels (using initramfs-tools from rolled-back 24.04)
+   - Updates GRUB configuration
+   - Syncs boot configuration to all mirror drives
+
+6. **Verifies rollback** and offers to reboot
+
+### Example Output
+
+```
+============================================================
+Ubuntu Upgrade Rollback Script
+Started: 2025-10-21 14:30:00
+============================================================
+
+[STEP] Step 1: Finding upgrade snapshots...
+[INFO] Found snapshot groups:
+
+  1. Snapshots from: 20251021-120000
+     - rpool/root@before-upgrade-to-questing-20251021-120000
+     - rpool/var@before-upgrade-to-questing-20251021-120000
+     - rpool/var/lib@before-upgrade-to-questing-20251021-120000
+     - rpool/var/log@before-upgrade-to-questing-20251021-120000
+
+[STEP] Step 2: Select snapshot to rollback...
+[INFO] Only one snapshot group found, using: 20251021-120000
+
+[STEP] Step 3: Rollback confirmation...
+╔════════════════════════════════════════════════════════════════╗
+║                         ⚠️  WARNING ⚠️                          ║
+║                                                                ║
+║  This will DESTROY all changes made after the snapshot!       ║
+║                                                                ║
+║  • All files modified after snapshot will be lost             ║
+║  • System will be restored to state from: 20251021-120000      ║
+║  • This operation CANNOT be undone                            ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+Current system state:
+  Ubuntu version: Ubuntu 25.10
+  Kernel: 6.17.0-6-generic
+
+Type 'ROLLBACK' to confirm (anything else to cancel): ROLLBACK
+
+[STEP] Step 4: Creating safety snapshot of current state...
+[INFO] ✓ Created safety snapshot: rpool/root@before-rollback-20251021-143000
+...
+
+[STEP] Step 5: Rolling back datasets...
+[INFO] Rolling back: rpool/root@before-upgrade-to-questing-20251021-120000
+[INFO] ✓ Rolled back: rpool/root
+...
+[INFO] Rollback results: 4 succeeded, 0 failed
+
+[STEP] Step 6: Regenerating boot configuration...
+[INFO] ✓ Initramfs regenerated
+[INFO] ✓ GRUB configuration updated
+
+[STEP] Step 7: Syncing boot configuration to all mirror drives...
+[INFO] ✓ Boot mirrors synchronized
+
+[STEP] Step 8: Verifying rollback...
+[INFO] ✓ ZFS pool health: ONLINE
+
+============================================================
+ROLLBACK SUMMARY
+============================================================
+
+✓ Rollback completed successfully!
+
+Rolled back to snapshots from: 20251021-120000
+Datasets rolled back: 4
+Safety snapshots created: before-rollback-20251021-143000
+
+Boot configuration:
+  ✓ Initramfs regenerated
+  ✓ GRUB configuration updated
+  ✓ Boot mirrors synchronized
+
+⚠️  System needs reboot to complete rollback
+
+Reboot now? (yes/no): yes
+Rebooting in 10 seconds...
+```
+
+### When to Use Manual Methods
+
+Use the manual methods below if:
+- System won't boot at all
+- Automated script fails or is unavailable
+- You need more control over the rollback process
+- System is in emergency/rescue mode
+
+---
+
 ## Rollback Decision Matrix
 
 ### When to Rollback
