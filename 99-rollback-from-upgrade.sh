@@ -113,7 +113,7 @@ for timestamp in $(echo "${!SNAPSHOT_GROUPS[@]}" | tr ' ' '\n' | sort -r); do
         fi
     done
     echo ""
-    ((idx++))
+    idx=$((idx + 1))
 done
 
 # ============================================================================
@@ -225,10 +225,10 @@ for snapshot in "${SNAPSHOTS_TO_ROLLBACK[@]}"; do
 
     if zfs rollback -r "$snapshot"; then
         log_info "✓ Rolled back: $dataset"
-        ((ROLLBACK_SUCCESS++))
+        ROLLBACK_SUCCESS=$((ROLLBACK_SUCCESS + 1))
     else
         log_error "✗ Failed to rollback: $dataset"
-        ((ROLLBACK_FAILED++))
+        ROLLBACK_FAILED=$((ROLLBACK_FAILED + 1))
     fi
 done
 

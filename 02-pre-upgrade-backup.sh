@@ -150,7 +150,7 @@ log_info "Found ${#DATASETS[@]} datasets to snapshot"
 SNAPSHOT_COUNT=0
 for dataset in "${DATASETS[@]}"; do
     if create_snapshot "${dataset}"; then
-        ((SNAPSHOT_COUNT++))
+        SNAPSHOT_COUNT=$((SNAPSHOT_COUNT + 1))
     fi
 done
 

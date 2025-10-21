@@ -56,17 +56,17 @@ log_test() {
 
 test_pass() {
     echo -e "${GREEN}  ✓ PASS${NC}: $1"
-    ((TESTS_PASSED++))
+    TESTS_PASSED=$((TESTS_PASSED + 1))
 }
 
 test_fail() {
     echo -e "${RED}  ✗ FAIL${NC}: $1"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 }
 
 test_warn() {
     echo -e "${YELLOW}  ⚠ WARN${NC}: $1"
-    ((TESTS_WARNED++))
+    TESTS_WARNED=$((TESTS_WARNED + 1))
 }
 
 # Check if running as root
@@ -351,7 +351,7 @@ for service in "${ZFS_SERVICES[@]}"; do
     else
         test_warn "${service} not active"
     fi
-    ((SERVICE_NUM++))
+    SERVICE_NUM=$((SERVICE_NUM + 1))
 done
 
 log_test "5.${SERVICE_NUM}: SSH service"
