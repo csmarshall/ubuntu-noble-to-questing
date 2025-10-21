@@ -108,7 +108,9 @@ for timestamp in $(echo "${!SNAPSHOT_GROUPS[@]}" | tr ' ' '\n' | sort -r); do
     TIMESTAMP_ARRAY+=("$timestamp")
     echo "  ${idx}. Snapshots from: ${timestamp}"
     echo "${SNAPSHOT_GROUPS[$timestamp]}" | while IFS= read -r snap; do
-        [[ -n "$snap" ]] && echo "     - $snap"
+        if [[ -n "$snap" ]]; then
+            echo "     - $snap"
+        fi
     done
     echo ""
     ((idx++))
