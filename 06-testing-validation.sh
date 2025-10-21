@@ -17,6 +17,9 @@
 
 set -euo pipefail
 
+# Disable shell timeout to prevent script from exiting during user prompts
+unset TMOUT 2>/dev/null || true
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
