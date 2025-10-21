@@ -21,6 +21,29 @@ This upgrade transitions your system from:
 
 **Why two steps?** Ubuntu 24.10 reached end-of-life in July 2025. The upgrade tool automatically skips EOL releases, jumping from 24.04 directly to 25.04, but cannot skip multiple releases to reach 25.10 in one step.
 
+### 🚨 CRITICAL: HWE Kernel 6.14+ Required
+
+**ZFS Upgrade Block:** Ubuntu blocked all ZFS upgrades to 25.04 due to a critical bug ([GitHub #17337](https://github.com/openzfs/zfs/issues/17337)) where systems would **freeze completely** when `update-grub` tried to list ZFS snapshots. This bug affects **older kernels only**.
+
+**Solution:** The upgrade script uses `--proposed` to access a newer release upgrader that handles systems on HWE kernel 6.14+ correctly.
+
+**⚠️ KERNEL REQUIREMENT:**
+
+Check your kernel version **before** starting:
+```bash
+uname -r
+```
+
+- **✅ Safe to proceed:** `6.14.0-XX-generic` or newer (HWE kernel)
+- **❌ DO NOT PROCEED:** `6.8.0-XX-generic` (standard kernel) - **HIGH RISK OF SYSTEM FREEZE**
+
+**If you're on kernel 6.8:**
+1. Upgrade to HWE kernel first: `sudo apt install linux-generic-hwe-24.04`
+2. Reboot to new kernel
+3. Verify with `uname -r` before proceeding
+
+Or wait for Ubuntu 26.04 LTS (April 2026).
+
 ## Critical Considerations
 
 ### ⚠️ Important Warnings

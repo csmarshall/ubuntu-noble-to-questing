@@ -114,6 +114,46 @@ log_info "${NEXT_STEP_MSG}"
 echo ""
 
 # ============================================================================
+# Kernel Version Check (Critical for ZFS systems)
+# ============================================================================
+KERNEL_VERSION=$(uname -r)
+KERNEL_MAJOR=$(echo "${KERNEL_VERSION}" | cut -d. -f1)
+KERNEL_MINOR=$(echo "${KERNEL_VERSION}" | cut -d. -f2)
+
+log_info "Checking kernel version for ZFS upgrade compatibility..."
+log_info "Current kernel: ${KERNEL_VERSION}"
+
+# Check if kernel is 6.14 or newer
+if [[ "${KERNEL_MAJOR}" -lt 6 ]] || [[ "${KERNEL_MAJOR}" -eq 6 && "${KERNEL_MINOR}" -lt 14 ]]; then
+    echo ""
+    echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║                      🚨 CRITICAL WARNING 🚨                     ║${NC}"
+    echo -e "${RED}║                                                                ║${NC}"
+    echo -e "${RED}║  KERNEL TOO OLD FOR ZFS UPGRADE!                              ║${NC}"
+    echo -e "${RED}║                                                                ║${NC}"
+    echo -e "${RED}║  Your kernel: ${KERNEL_VERSION}                                        ║${NC}"
+    echo -e "${RED}║  Required: 6.14.0 or newer (HWE kernel)                       ║${NC}"
+    echo -e "${RED}║                                                                ║${NC}"
+    echo -e "${RED}║  Ubuntu 25.04 has a bug that causes SYSTEM FREEZE during      ║${NC}"
+    echo -e "${RED}║  upgrade on older kernels with ZFS root.                      ║${NC}"
+    echo -e "${RED}║                                                                ║${NC}"
+    echo -e "${RED}║  GitHub Issue: openzfs/zfs#17337                              ║${NC}"
+    echo -e "${RED}║                                                                ║${NC}"
+    echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    log_error "To proceed, upgrade to HWE kernel first:"
+    log_error "  sudo apt install linux-generic-hwe-24.04"
+    log_error "  sudo reboot"
+    log_error "Then re-run this script after booting to 6.14+"
+    echo ""
+    exit 1
+else
+    log_info "✓ Kernel ${KERNEL_VERSION} is compatible (6.14+)"
+fi
+
+echo ""
+
+# ============================================================================
 # Safety Confirmation
 # ============================================================================
 
@@ -357,7 +397,9 @@ sleep 5
 # Run the upgrade
 # Note: Do NOT use -d flag (that targets development releases)
 # With Prompt=normal, this will upgrade to next available interim release
-if do-release-upgrade -f DistUpgradeViewNonInteractive; then
+# Using --proposed to get newer release upgrader that handles ZFS systems properly
+# (older versions block ZFS upgrades due to kernel freeze bugs that don't affect HWE kernels)
+if do-release-upgrade --proposed -f DistUpgradeViewNonInteractive; then
     log_info "✓ Distribution upgrade to ${TARGET_VERSION} completed successfully"
     log_info "${NEXT_STEP_MSG}"
 else

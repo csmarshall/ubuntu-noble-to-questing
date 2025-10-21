@@ -149,6 +149,31 @@ sudo apt-mark unhold $(apt-mark showhold)
 
 ---
 
+### Issue: "Sorry, cannot upgrade this system to 25.04 right now" (ZFS Block)
+
+**Symptoms**:
+- Upgrade fails with: "Sorry, cannot upgrade this system to 25.04 right now"
+- Error mentions: "System freezes have been observed on upgrades to 25.04 with ZFS enabled"
+- References: https://wiki.ubuntu.com/PluckyPuffin/ReleaseNotes
+
+**Cause**:
+Ubuntu 25.04 had a bug where `update-grub` would freeze when listing ZFS snapshots during upgrade (GitHub issue #17337). This affected systems on older kernels with mismatched ZFS kernel/userspace modules. Ubuntu implemented a blanket block on all ZFS upgrades.
+
+**Solution**:
+The upgrade script uses `--proposed` flag to get a newer release upgrader that:
+- Either has the ZFS freeze bug fixed, or
+- Skips the block for systems on HWE kernel 6.14+ (which don't have the issue)
+
+If you're running the script and still see this error:
+```bash
+# Use --proposed flag manually
+sudo do-release-upgrade --proposed
+```
+
+**Note**: Systems on Ubuntu 24.04 HWE kernel 6.14+ are not affected by the original freeze bug, which only affected older kernel versions during 24.10 → 25.04 upgrades.
+
+---
+
 ### Issue: "There is no development version of an LTS available"
 
 **Symptoms**:
